@@ -8,11 +8,9 @@ from streamlit_mic_recorder import mic_recorder
 # --- 1. CONFIGURATION & GESTION DU THÈME ---
 st.set_page_config(page_title="LIDOF English Coach", layout="wide", page_icon="🎓")
 
-# Initialisation du thème par défaut dans le session_state avant tout rendu
 if "theme" not in st.session_state:
     st.session_state.theme = "Professional Blue"
 
-# Définition précise des palettes pour éviter la confusion visuelle
 themes = {
     "Professional Blue": {
         "bg": "#f0f2f6", "accent": "#003366", "card": "#ffffff", 
@@ -28,35 +26,39 @@ themes = {
     }
 }
 
-# Fonction pour appliquer le CSS de manière forcée
 def apply_theme(theme_name):
     t = themes[theme_name]
     st.markdown(f"""
         <style>
-        /* Fond de l'application */
+        /* Fond global */
         .stApp {{ background-color: {t['bg']}; color: {t['text']}; }}
         
-        /* Sidebar */
+        /* Sidebar responsive */
         [data-testid="stSidebar"] {{ background-color: {t['sidebar']}; border-right: 1px solid {t['border']}; }}
-        
-        /* Conteneurs et Boîtes */
+
+        /* Boîte d'entête adaptative */
         .header-box {{
-            text-align: center; padding: 20px;
+            text-align: center; padding: 15px;
             background: {t['card']}; border-radius: 15px;
             border: 2px solid {t['border']}; margin-bottom: 20px;
         }}
-        
-        /* Harmonisation des textes et boutons */
+
+        /* --- OPTIMISATION MOBILE (CSS Media Queries) --- */
+        @media (max-width: 768px) {{
+            .header-box h1 {{ font-size: 1.4rem !important; }}
+            .contact-info {{ font-size: 0.75rem !important; }}
+            /* Force les colonnes à s'empiler sur mobile */
+            [data-testid="column"] {{ width: 100% !important; flex: 1 1 100% !important; }}
+            .main-logo {{ width: 70px !important; margin: 0 auto; display: block; }}
+        }}
+
+        /* Harmonisation */
         h1, h2, h3, p, span, label {{ color: {t['text']} !important; }}
         .contact-info {{ color: {t['accent']}; font-weight: bold; }}
-        
-        /* Style des widgets Streamlit */
-        div[data-baseweb="select"] > div {{ background-color: {t['card']} !important; color: {t['text']} !important; }}
-        button {{ border-color: {t['accent']} !important; }}
+        button {{ border-color: {t['accent']} !important; width: 100%; }}
         </style>
     """, unsafe_allow_html=True)
 
-# Appliquer le thème immédiatement
 apply_theme(st.session_state.theme)
 
 # --- 2. INITIALISATION DES MOTEURS ---
@@ -75,14 +77,12 @@ if "brain" not in st.session_state:
 # --- 3. SIDEBAR (DASHBOARD) ---
 with st.sidebar:
     st.title("🎓 Pro Dashboard")
-    
-    # Changement de thème avec callback pour mise à jour immédiate
     new_theme = st.selectbox("🎨 Thème Visuel", list(themes.keys()), 
                              index=list(themes.keys()).index(st.session_state.theme))
     
     if new_theme != st.session_state.theme:
         st.session_state.theme = new_theme
-        st.rerun() # Force le rafraîchissement avec le nouveau CSS
+        st.rerun()
 
     st.divider()
     level = st.select_slider("My Level", ["Beginner", "Intermediate", "Advanced"], "Intermediate")
@@ -100,27 +100,29 @@ with st.sidebar:
         st.session_state.last_analysis = None
         st.rerun()
 
-# --- 4. ENTÊTE LIDOF ---
+# --- 4. ENTÊTE LIDOF (RESPONSIVE) ---
 t_active = themes[st.session_state.theme]
-h_col1, h_col2, h_col3 = st.columns([1, 3, 1])
+# Utilisation de colonnes qui s'adaptent
+h_col1, h_col2, h_col3 = st.columns([1, 4, 1])
 
 with h_col1:
-    st.image("FABLAB-modified.png", width=100) # Assurez-vous que le fichier existe
+    st.image("FABLAB-modified.png", use_container_width=True)
 
 with h_col2:
     st.markdown(f"""
         <div class="header-box">
             <h1 style="color: {t_active['accent']}; margin: 0;">LIDOF English Coach</h1>
             <div class="contact-info">
-                📧 {st.secrets.get("MAIL", "m.fodil@cu-maghnia.dz")} | 📞 {st.secrets.get("TEL", "0550139987")}
+                📧 {st.secrets.get("MAIL", "m.fodil@cu-maghnia.dz")} <br class="mobile-only">| 📞 {st.secrets.get("TEL", "0550139987")}
             </div>
         </div>
     """, unsafe_allow_html=True)
 
 with h_col3:
-    st.image("CUM.png", width=100) # Assurez-vous que le fichier existe
+    st.image("CUM.png", use_container_width=True)
 
 # --- 5. INTERFACE DE CHAT & ANALYSE ---
+# Disposition 2:1 sur PC, Empilée sur Mobile
 col_chat, col_ana = st.columns([2, 1])
 
 with col_chat:
@@ -140,7 +142,8 @@ with col_ana:
 
 # --- 6. GESTION AUDIO & MICRO ---
 st.divider()
-_, mic_col, _ = st.columns([1, 1, 1])
+# Micro large sur mobile pour faciliter le clic
+_, mic_col, _ = st.columns([1, 2, 1])
 with mic_col:
     audio = mic_recorder(start_prompt="🎤 START COACHING", stop_prompt="🛑 STOP & SEND", key='recorder')
 
